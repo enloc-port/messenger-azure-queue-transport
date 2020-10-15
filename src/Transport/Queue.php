@@ -168,6 +168,10 @@ class Queue
      */
     private function encodeMessage(Message $message): string
     {
+        if ($this->getOption('body_only') === true) {
+            return base64_encode($message->getBody());
+        }
+        
         return base64_encode(serialize($message));
     }
 
