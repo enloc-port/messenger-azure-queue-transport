@@ -6,6 +6,7 @@ use MicrosoftAzure\Storage\Queue\Models\CreateMessageOptions;
 use MicrosoftAzure\Storage\Queue\Models\ListMessagesOptions;
 use MicrosoftAzure\Storage\Queue\Models\QueueMessage;
 use MicrosoftAzure\Storage\Queue\QueueRestProxy;
+use Symfony\Component\Messenger\Exception\MessageDecodingFailedException;
 
 /**
  * Class Queue
@@ -169,9 +170,21 @@ class Queue
     private function encodeMessage(Message $message): string
     {
         if ($this->getOption('body_only') === true) {
-            return base64_encode($message->getBody());
+            $jsonBody = $message->getBody();
+            $data = json_decode($jsonBody, true);
+            if ($data === false) {
+                throw new MessageDecodingFailedException('Failed to decode message for transport');
+            }
+
+            $data['__headers'] = $message->getHeaders();
+            $combindJson = json_encode($data);
+            if ($combindJson === false) {
+                throw new MessageDecodingFailedException('Failed to reencode message for transport');
+            }
+
+            return base64_encode($combindJson);
         }
-        
+
         return base64_encode(serialize($message));
     }
 
@@ -183,6 +196,28 @@ class Queue
      */
     private function decodeMessage(string $message): Message
     {
+        // TODO migrate to upstream repo
+        if ($this->getOption('body_only') === true) {
+            $json = base64_decode($message);
+            $data = json_decode($json, true);
+            if ($data === false) {
+                throw new MessageDecodingFailedException('Failed to decode message from transport');
+            }
+
+            $headers = [];
+            if (array_key_exists('__headers', $data)) {
+                $headers = $data['__headers'];
+                unset($data['__headers']);
+                $json = json_encode($data);
+                if ($json === false) {
+                    throw new MessageDecodingFailedException('Failed to reencode message from transport');
+                }
+            }
+
+            $result = new Message($json, $headers);
+            return $result;
+        }
+
         return unserialize(base64_decode($message));
     }
 }
