@@ -24,6 +24,6 @@ class QueueTransportFactory implements TransportFactoryInterface
      */
     public function supports(string $dsn, array $options): bool
     {
-        return 0 === strpos($dsn, 'azurequeue://');
+        return 0 === strpos($dsn, 'azurequeue://') || 0 === strpos($dsn, 'azurequeue-connection-string://');
     }
 }
