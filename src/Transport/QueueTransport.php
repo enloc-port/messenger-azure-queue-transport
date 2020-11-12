@@ -3,13 +3,14 @@
 namespace Abau\MessengerAzureQueueTransport\Transport;
 
 use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\Transport\SetupableTransportInterface;
 use Symfony\Component\Messenger\Transport\TransportInterface;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 
 /**
  * Class QueueTransport
  */
-class QueueTransport implements TransportInterface
+class QueueTransport implements TransportInterface, SetupableTransportInterface
 {
     /**
      * @var string
@@ -120,4 +121,11 @@ class QueueTransport implements TransportInterface
     {
         return $this->sender ?? $this->sender = new QueueSender($this->getQueue(), $this->serializer);
     }
+
+    public function setup(): void
+    {
+        $this->getQueue()->create();
+    }
+
+
 }
