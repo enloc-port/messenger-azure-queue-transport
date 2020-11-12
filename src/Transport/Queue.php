@@ -2,6 +2,7 @@
 
 namespace Abau\MessengerAzureQueueTransport\Transport;
 
+use MicrosoftAzure\Storage\Common\Internal\StorageServiceSettings;
 use MicrosoftAzure\Storage\Queue\Models\CreateMessageOptions;
 use MicrosoftAzure\Storage\Queue\Models\ListMessagesOptions;
 use MicrosoftAzure\Storage\Queue\Models\QueueMessage;
@@ -40,6 +41,16 @@ class Queue
         $this->options = $options;
 
         $this->client = $this->createClient();
+    }
+
+    public function create(): void
+    {
+        $name = $this->getOption('queue_name');
+        if (empty($name)) {
+            throw new \RuntimeException('Could not setup queue with empty name. Configure queue_name option to fix this error!');
+        }
+
+        $this->client->createQueue($name);
     }
 
     /**
@@ -142,6 +153,8 @@ class Queue
         $name = rawurldecode(parse_url($dsn, PHP_URL_USER));
         $key = rawurldecode(parse_url($dsn, PHP_URL_PASS));
 
+        // TODO migrate to upstream repo
+        return 'DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;QueueEndpoint=http://azurite:10001/devstoreaccount1;';
         return sprintf($connection, $name, $key);
     }
 
@@ -196,7 +209,6 @@ class Queue
      */
     private function decodeMessage(string $message): Message
     {
-        // TODO migrate to upstream repo
         if ($this->getOption('body_only') === true) {
             $json = base64_decode($message);
             $data = json_decode($json, true);
