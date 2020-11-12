@@ -149,12 +149,15 @@ class Queue
     private function getConnectionString(string $dsn): string
     {
         $connection = 'DefaultEndpointsProtocol=https;AccountName=%s;AccountKey=%s';
+        $schema = rawurldecode(parse_url($dsn, PHP_URL_SCHEME));
+
+        if ($schema === 'azurequeue-connection-string') {
+            return str_replace("{$schema}://", '', $dsn);
+        }
 
         $name = rawurldecode(parse_url($dsn, PHP_URL_USER));
         $key = rawurldecode(parse_url($dsn, PHP_URL_PASS));
 
-        // TODO migrate to upstream repo
-        return 'DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;QueueEndpoint=http://azurite:10001/devstoreaccount1;';
         return sprintf($connection, $name, $key);
     }
 
